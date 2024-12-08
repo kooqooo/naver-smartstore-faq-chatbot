@@ -3,9 +3,10 @@ import os
 import openai
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
-MODEL = os.getenv("MODEL")
+CHAT_MODEL = os.getenv("CAHT_MODEL")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 client = openai.OpenAI()
 
 
