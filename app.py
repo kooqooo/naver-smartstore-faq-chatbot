@@ -1,6 +1,9 @@
 import streamlit as st
+from dotenv import load_dotenv
+from openai import OpenAI
 
-from src.front.utils import Message, delete_session_state, write_message
+from src.front.utils import delete_session_state, get_response_stream, write_message
+from src.message_template import Message, Messages
 
 # 페이지 설정
 st.set_page_config(page_title="스마트스토어 FAQ 챗봇", layout="centered")
@@ -14,7 +17,10 @@ st.markdown(
 if "chat_started" not in st.session_state:  # 채팅이 시작되었는지 여부
     st.session_state.chat_started = False
 if "messages" not in st.session_state:  # 화면에 표시할 메시지
-    st.session_state.messages = []
+    st.session_state.messages = Messages()
+if "client" not in st.session_state:  # OpenAI 클라이언트
+    load_dotenv()
+    st.session_state.client = OpenAI()
 
 
 # 채팅 내용 표시
@@ -44,15 +50,12 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
         delete_session_state()
         st.stop()
     user_message = Message(role="user", content=user_input)
-    st.session_state.messages.append(user_message)
+    st.session_state.messages += user_message
     write_message(user_message)
 
     # 챗봇 대답
-    assistant_message = Message(
-        role="assistant", content=f'"{user_input}"라고 말씀하셨군요.'
-    )
-    st.session_state.messages.append(assistant_message)
-    write_message(assistant_message)
+    with st.chat_message("assistant"):
+        st.write_stream(get_response_stream(user_input))
 
     # 채팅 시작
     st.session_state.chat_started = True
