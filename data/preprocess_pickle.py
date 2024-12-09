@@ -69,16 +69,13 @@ def preprocess() -> dict[str, dict[str, str | list[str]]]:
         preprocessed_data[key] = (res)
 
     save_pickle(data=preprocessed_data, path=new_pickle_path)
-    with open("questions.txt", "w", encoding="utf-8") as f:
-        for question in preprocessed_data.keys():
-            f.write(question + "\n")
     return preprocessed_data
 
 def embed_pickle():
     data = load_pickle(new_pickle_path)
     embedded_data: list[dict[str, int | str | list[float]]] = []
     questions = list(data.keys())
-    for i, question in tqdm(enumerate(questions)):
+    for i, question in enumerate(tqdm(questions)):
         try:
             embedding = embed_questions(question)
             embedded_data.append({"id": i+1, "question": question, "answer": data[question]["answer"], "optional": data[question]["optional"], "vector": embedding})
