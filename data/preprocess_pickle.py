@@ -1,9 +1,19 @@
 import os
+import sys
 import pickle
 import re
 
-pickle_path = os.path.join(os.path.dirname(__file__), "final_result.pkl")
-new_pickle_path = os.path.join(os.path.dirname(__file__), "data.pkl")
+from tqdm import tqdm
+
+data = os.path.dirname(__file__)
+pickle_path = os.path.join(data, "final_result.pkl")
+new_pickle_path = os.path.join(data, "data.pkl")
+embedded_pickle_path = os.path.join(data, "embedded_data.pkl")
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(current_dir, '..'))
+sys.path.append(project_root)
+from data.embeddings import embed_questions
 
 
 def load_pickle(path: str = pickle_path) -> dict:
@@ -12,8 +22,8 @@ def load_pickle(path: str = pickle_path) -> dict:
     return data
 
 
-def save_pickle(data: list[dict]):
-    with open(new_pickle_path, "wb") as f:
+def save_pickle(data: list[dict], path: str = new_pickle_path) -> None:
+    with open(path, "wb") as f:
         pickle.dump(data, f)
 
 
@@ -48,24 +58,38 @@ def replace_non_breaking_space(text: str) -> str:
     return re.sub("\xa0+", " ", text)
 
 
-def main() -> dict[str, dict[str, str | list[str]]]:
+def preprocess() -> dict[str, dict[str, str | list[str]]]:
     data: dict = load_pickle()
     preprocessed_data = dict()
 
     for key, value in data.items():
+        key: str = replace_non_breaking_space(key)
         value: str = replace_non_breaking_space(value)
         res: dict = process_postfix(value)
-        print(res)
         preprocessed_data[key] = (res)
 
-    save_pickle(preprocessed_data)
+    save_pickle(data=preprocessed_data, path=new_pickle_path)
+    with open("questions.txt", "w", encoding="utf-8") as f:
+        for question in preprocessed_data.keys():
+            f.write(question + "\n")
+    return preprocessed_data
 
+def embed_pickle():
+    data = load_pickle(new_pickle_path)
+    embedded_data: list[dict[str, int | str | list[float]]] = []
+    questions = list(data.keys())
+    for i, question in tqdm(enumerate(questions)):
+        try:
+            embedding = embed_questions(question)
+            embedded_data.append({"id": i+1, "question": question, "answer": data[question]["answer"], "optional": data[question]["optional"], "vector": embedding})
+        except ValueError:
+            print(f"Failed to embed question: {question}")
+            continue
+    save_pickle(data=embedded_data, path=embedded_pickle_path)
+    return embedded_data
 
 if __name__ == "__main__":
-    main()
-
-    data = load_pickle(new_pickle_path)
-    print(data)
+    preprocess() # 전처리 후 data.pkl에 저장
     """
     저장되는 데이터 예시
     {
@@ -73,3 +97,7 @@ if __name__ == "__main__":
         "질문 2": {"answer": "답변 2", "optional": []}
     }
     """
+    # data = load_pickle(new_pickle_path)
+    # print(data)
+
+    embed_pickle() # data.pkl의 질문을 임베딩하여 
