@@ -9,6 +9,13 @@ from src.config import EMBEDDING_MODEL, client as openai_client
 dimensions = 1536 if EMBEDDING_MODEL.endswith('small') else 3072
 
 
+def embed_question(question: str) -> list[float]:
+    # 임베딩
+    embedding_response = openai_client.embeddings.create(input=question, model=EMBEDDING_MODEL, dimensions=dimensions)
+    data = embedding_response.data[0]
+    embedding = data.embedding
+    return embedding
+
 def embed_questions(questions: list[str]) -> list[list[float]]:
     # 임베딩
     embeddings = []

@@ -13,7 +13,7 @@ embedded_pickle_path = os.path.join(data, "embedded_data.pkl")
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(project_root)
-from data.embeddings import embed_questions
+from data.embeddings import embed_question
 
 
 def load_pickle(path: str = pickle_path) -> dict:
@@ -77,7 +77,7 @@ def embed_pickle():
     questions = list(data.keys())
     for i, question in enumerate(tqdm(questions)):
         try:
-            embedding = embed_questions(question)
+            embedding = embed_question(question)
             embedded_data.append({"id": i+1, "question": question, "answer": data[question]["answer"], "optional": data[question]["optional"], "vector": embedding})
         except ValueError:
             print(f"Failed to embed question: {question}")
