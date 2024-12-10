@@ -25,6 +25,5 @@ if __name__ == "__main__":
     
     embedded_pickle_path = os.path.join(os.path.dirname(__file__), "embedded_data.pkl")
     data = load_pickle(embedded_pickle_path)
-    
-    data = [{"vector": d["vector"][0], **{k:v for k,v in d.items() if k != "vector"}} for d in data if isinstance(d["vector"][0], list)]
+
     create_vector_index(data=data)
