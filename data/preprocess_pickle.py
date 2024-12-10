@@ -14,7 +14,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, '..'))
 sys.path.append(project_root)
 from data.embeddings import embed_question
-
+from data.db_manager import create_vector_index
 
 def load_pickle(path: str = pickle_path) -> dict:
     with open(path, "rb") as f:
@@ -97,4 +97,5 @@ if __name__ == "__main__":
     # data = load_pickle(new_pickle_path)
     # print(data)
 
-    embed_pickle() # data.pkl의 질문을 임베딩하여 
+    embedded_pickle = embed_pickle() # data.pkl의 질문을 임베딩하여 
+    create_vector_index(data=embedded_pickle) # milvus에 저장
