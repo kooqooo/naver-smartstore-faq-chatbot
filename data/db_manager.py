@@ -8,9 +8,10 @@ dimension = 1536 if os.getenv("EMBEDDING_MODEL").endswith("small") else 3072
 db_path = os.path.join(os.path.dirname(__file__), "milvus.db")
 
 
-client = pymilvus.MilvusClient(db_path)
 if os.name == 'nt':                     # Windows
     client = pymilvus.MilvusClient()    # docker-compose가 실행중이어야 가능합니다.
+else:
+    client = pymilvus.MilvusClient(db_path)
 
 
 def create_vector_index(collection_name: str="faq", data: list[dict]=None):
@@ -27,6 +28,20 @@ def filter_by_threshold(search_results: list[list[dict]], threshold: float = 0.4
     for result in search_results[0]:
         if result["distance"] >= threshold:
             results.append(result)
+    return results
+
+def search_from_faq(embedded_question: list[float], collection_name: str="faq", limit: int=10) -> list[dict]:
+    results = []
+    searched_results: list[list[dict]] = client.search(collection_name=collection_name, data=[embedded_question], output_fields=["question", "answer", "optional"], limit=limit)
+    searched_results = filter_by_threshold(searched_results, threshold=0.4)
+    for result in searched_results:
+        temp = dict()
+        entity = result["entity"]
+        # temp["id"] = result["id"]
+        temp["question"] = entity["question"]
+        temp["answer"] = entity["answer"]
+        temp["optional"] = entity["optional"]
+        results.append(temp)
     return results
 
 if __name__ == "__main__":

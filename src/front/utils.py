@@ -1,6 +1,6 @@
 import streamlit as st
 
-from src.message_template import Message
+from src.message_template import Message, Messages
 
 
 def write_message(message: Message):
@@ -8,9 +8,17 @@ def write_message(message: Message):
         st.write(message.content)
 
 
+def write_messages(messages: Messages):
+    for message in messages:
+        write_message(message)
+
+
 def write_stream_message(message: Message):
     with st.chat_message("assistant"):
         st.write_stream(message.content)
+
+def add_messages_to_session_state(messages: Messages):
+    st.session_state.messages += messages
 
 
 def delete_session_state():
@@ -18,7 +26,7 @@ def delete_session_state():
         del st.session_state[key]
 
 
-def get_response_stream(prompt):
+def get_response_stream(messages: Messages):
     """
     OpenAI API의 스트리밍 응답을 직접 제너레이터로 변환
     """
@@ -26,7 +34,7 @@ def get_response_stream(prompt):
         # OpenAI API 호출
         stream = st.session_state.client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages.to_dict(),
             stream=True,
         )
 
@@ -39,8 +47,11 @@ def get_response_stream(prompt):
                 full_response += content
                 yield content
 
-        # 전체 응답을 세션 스테이트에 저장
-        st.session_state.messages += Message(role="assistant", content=full_response)
+        # # 전체 응답을 세션 스테이트에 저장
+        # st.session_state.messages += Message(role="assistant", content=full_response)
+        response_message = Messages()
+        response_message.add_message(role="assistant", content=full_response)
+        add_messages_to_session_state(response_message)
 
     except Exception as e:
         st.error(f"오류가 발생했습니다: {str(e)}")

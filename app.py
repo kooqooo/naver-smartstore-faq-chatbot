@@ -2,8 +2,13 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from src.front.utils import delete_session_state, get_response_stream, write_message
-from src.message_template import Message, Messages
+from src.front.utils import (delete_session_state,
+                            get_response_stream,
+                            write_messages,
+                            add_messages_to_session_state,)
+from src.message_template import Messages
+from data.db_manager import search_from_faq, client as milvus_client
+from data.embeddings import embed_question
 
 # 페이지 설정
 st.set_page_config(page_title="스마트스토어 FAQ 챗봇", layout="centered")
@@ -18,21 +23,30 @@ if "chat_started" not in st.session_state:  # 채팅이 시작되었는지 여�
     st.session_state.chat_started = False
 if "messages" not in st.session_state:  # 화면에 표시할 메시지
     st.session_state.messages = Messages()
-if "client" not in st.session_state:  # OpenAI 클라이언트
+if "backend_messages" not in st.session_state:  # 백엔드에 전달할 메시지
+    st.session_state.backend_messages = Messages()
+if "system_prompt_messages" not in st.session_state:  # 프롬프트를 담은 메시지
+    chat_system_prompt_path = "prompts/chat_system_prompt.txt"
+    st.session_state.system_prompt_messages = Messages.from_prompt_file(chat_system_prompt_path)
+if "milvus" not in st.session_state:  # Milvus 클라이언트
+    st.session_state.milvus = milvus_client
+if "client" not in st.session_state:  # OpenAI 클라이언트 # 여기에서 굳이 필요 없는 듯
     load_dotenv()
     st.session_state.client = OpenAI()
 
 
 # 채팅 내용 표시
-for message in st.session_state.messages:
-    write_message(message)
+write_messages(st.session_state.messages)
 
 if not st.session_state.chat_started:
-    init_assistant_message = Message(
+    init_assistant_message = Messages()
+    init_assistant_message.add_message(
         role="assistant",
         content="안녕하세요. 네이버 스마트스토어 질의응답 챗봇입니다. 무엇을 도와드릴까요?",
     )
-    write_message(init_assistant_message)
+    write_messages(init_assistant_message)
+    add_messages_to_session_state(init_assistant_message)
+    st.session_state.chat_started = True
 
 # user_input = st.chat_input("텍스트를 입력하세요.")
 if user_input := st.chat_input("텍스트를 입력하세요."):
@@ -49,13 +63,20 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
     ]:
         delete_session_state()
         st.stop()
-    user_message = Message(role="user", content=user_input)
-    st.session_state.messages += user_message
-    write_message(user_message)
+    user_message = Messages()
+    user_message.add_message(role="user", content=user_input) # 구매 확정에 대해서 알려주세요
+    write_messages(user_message)
+    add_messages_to_session_state(user_message)
 
+    # TODO: 사용자 입력을 임베딩하여 가장 적절한 하나의 reference를 찾도록 수정
+    embedded_user_input = embed_question(user_input)
+    reference = search_from_faq(embedded_user_input)[:5] # 추후에 get_reference 함수로 변경
+
+    st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": str(reference)})
+    st.session_state.backend_messages += st.session_state.messages
+    from pprint import pprint
+    pprint(st.session_state.backend_messages.to_dict())
     # 챗봇 대답
     with st.chat_message("assistant"):
-        st.write_stream(get_response_stream(user_input))
+        st.write_stream(get_response_stream(st.session_state.backend_messages))
 
-    # 채팅 시작
-    st.session_state.chat_started = True

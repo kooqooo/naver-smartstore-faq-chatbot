@@ -1,59 +1,60 @@
-from typing import List, Tuple, Union
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Tuple, Optional
 
 
+@dataclass
 class Message:
-    def __init__(self, role: str, content: str) -> None:
-        self.role = role
-        self.content = content
+    role: str
+    content: str
+
+    def __post_init__(self) -> None:
+        if self.role not in ["system", "user", "assistant"]:
+            raise ValueError("role은 'system', 'user','assistant' 중에 하나여야 합니다.")
 
     def __repr__(self) -> str:
         return f"Message(role='{self.role}', content='{self.content}')"
 
+    def to_dict(self) -> dict[str, str]:
+        return {"role": self.role, "content": self.content}
+
     def render(self, context: dict) -> str:
-        return self.content.format(**context)
+        try:
+            return self.content.format(**context)
+        except KeyError as e:
+            raise KeyError(f"키 에러: {e}가 context에 없습니다.") from e
+        except Exception as e:
+            raise e
 
 
 class Messages:
-    def __init__(self) -> None:
-        self.messages: list[Message | None] = []
-
-    def validate_role(self, role: str):
-        assert role in [
-            "system",
-            "user",
-            "assistant",
-        ], "Role must be 'system', 'user', or 'assistant'"
+    def __init__(self, system_prompt: Optional[str] = None) -> None:
+        self.messages: list[Message] = []
+        if system_prompt:
+            self.add_message("system", system_prompt)
 
     def add_message(self, role: str, content: str):
-        self.validate_role(role)
-        self.messages.append(Message(role, content))
+        self.messages.append(Message(role=role, content=content))
 
-    def add_messages(
-        self, messages: Union[List[Union[List, Tuple]], Tuple[Union[List, Tuple]]]
-    ):
-        for message in messages:
-            self.validate_role(message[0])
-            self.messages.append(Message(message[0], message[1]))
+    def add_messages(self, messages: List[tuple[str, str]]) -> None:
+        for role, content in messages:
+            self.add_message(role, content)
 
-    @classmethod
-    def from_message(cls, role: str, content: str) -> "Messages":
-        instance = cls()
-        instance.validate_role(role)
-        instance.add_message(role, content)
-        return instance
-
-    @classmethod
-    def from_messages(
-        cls, messages: Union[List[Union[List, Tuple]], Tuple[Union[List, Tuple]]]
-    ) -> "Messages":
-        instance = cls()
-        for message in messages:
-            instance.add_message(message[0], message[1])
-        return instance
-
-    def render(self, context: dict) -> None:
+    def render_all(self, context: dict) -> "Messages":
+        rendered_messages = Messages()
         for message in self.messages:
-            message.content = message.render(context)
+            rendered_content = message.render(context)
+            rendered_messages.add_message(message.role, rendered_content)
+        return rendered_messages
+    
+    @classmethod
+    def from_prompt_file(cls, prompt_path: str) -> "Messages":
+        path = Path(prompt_path)
+        if not path.exists():
+            raise FileNotFoundError(f"{path}에 프롬프트가 존재하지 않습니다.")
+        
+        prompt = path.read_text(encoding="utf-8-sig").strip()
+        return cls(system_prompt=prompt)
 
     def to_dict(self) -> List[dict[str, str]]:
         return [
@@ -88,15 +89,17 @@ class Messages:
 
 if __name__ == "__main__":
     # Example usage
-    message = Messages.from_message("assistant", "Hello, how can I help you?")
+    messages = Messages()
+    messages.add_message("assistant", "Hello, how can I help you?")
 
-    messages = Messages.from_messages(
+    messages.add_messages(
         [
             ("system", "You are a helpful assistant"),
             ("user", "Tell me a joke about {topic}"),
         ]
     )
-    other_messages = Messages.from_messages(
+    other_messages = Messages()
+    other_messages.add_messages(
         [
             ("system", "더하기 연산자 테스트"),
             ("user", "이게 보인다면 성공입니다."),
@@ -109,15 +112,20 @@ if __name__ == "__main__":
     messages.add_messages(
         [("user", "add_messages 테스트"), ("assistant", "add_messages 테스트2")]
     )
-    messages.render({"topic": "cats"})
+    messages = messages.render_all({"topic": "cats"})
+
+    test_message = Messages()
+    test_message = test_message.from_prompt_file("prompts/chat_system_prompt.txt")
+    test_message.add_message("user", "내 이름은 {name}이야.")
+    test_message.add_message("assistant", "안녕하세요, {name}님.")
+    test_message = test_message.render_all({"reference": "주어진 정보", "name": "구희찬"})
+    test_message = test_message.render_all({"reference": "주어진 정보2"}) # 당연하게도 한 번 렌더링되면 다시 렌더링 불가
 
     def pretty_print(messages: List[dict[str, str]]):
         role_width = max(len(message["role"]) for message in messages) + 2
-        content_width = max(len(message["content"]) for message in messages) + 2
         for message in messages:
-            print(
-                message["role"].ljust(role_width)
-                + message["content"].ljust(content_width)
-            )
+            print(message["role"].ljust(role_width) + message["content"])
 
     pretty_print(messages.to_dict())
+    print()
+    pretty_print(test_message.to_dict())
