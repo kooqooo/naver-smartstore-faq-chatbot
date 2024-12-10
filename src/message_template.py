@@ -1,6 +1,7 @@
 from typing import List, Tuple, Union
 
 
+
 class Message:
     def __init__(self, role: str, content: str) -> None:
         self.role = role
@@ -34,22 +35,6 @@ class Messages:
         for message in messages:
             self.validate_role(message[0])
             self.messages.append(Message(message[0], message[1]))
-
-    @classmethod
-    def from_message(cls, role: str, content: str) -> "Messages":
-        instance = cls()
-        instance.validate_role(role)
-        instance.add_message(role, content)
-        return instance
-
-    @classmethod
-    def from_messages(
-        cls, messages: Union[List[Union[List, Tuple]], Tuple[Union[List, Tuple]]]
-    ) -> "Messages":
-        instance = cls()
-        for message in messages:
-            instance.add_message(message[0], message[1])
-        return instance
 
     def render(self, context: dict) -> None:
         for message in self.messages:
@@ -88,15 +73,17 @@ class Messages:
 
 if __name__ == "__main__":
     # Example usage
-    message = Messages.from_message("assistant", "Hello, how can I help you?")
+    messages = Messages()
+    messages.add_message("assistant", "Hello, how can I help you?")
 
-    messages = Messages.from_messages(
+    messages.add_messages(
         [
             ("system", "You are a helpful assistant"),
             ("user", "Tell me a joke about {topic}"),
         ]
     )
-    other_messages = Messages.from_messages(
+    other_messages = Messages()
+    other_messages.add_messages(
         [
             ("system", "더하기 연산자 테스트"),
             ("user", "이게 보인다면 성공입니다."),
