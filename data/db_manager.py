@@ -8,9 +8,10 @@ dimension = 1536 if os.getenv("EMBEDDING_MODEL").endswith("small") else 3072
 db_path = os.path.join(os.path.dirname(__file__), "milvus.db")
 
 
-client = pymilvus.MilvusClient(db_path)
 if os.name == 'nt':                     # Windows
     client = pymilvus.MilvusClient()    # docker-compose가 실행중이어야 가능합니다.
+else:
+    client = pymilvus.MilvusClient(db_path)
 
 
 def create_vector_index(collection_name: str="faq", data: list[dict]=None):
