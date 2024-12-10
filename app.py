@@ -4,12 +4,11 @@ from openai import OpenAI
 
 from src.front.utils import (delete_session_state,
                             get_response_stream,
-                            write_message,
                             write_messages,
                             add_messages_to_session_state,)
-                            # add_backend_messages_to_session_state,)
-from src.message_template import Message, Messages
-from data.db_manager import client as milvus_client
+from src.message_template import Messages
+from data.db_manager import search_from_faq, client as milvus_client
+from data.embeddings import embed_question
 
 # 페이지 설정
 st.set_page_config(page_title="스마트스토어 FAQ 챗봇", layout="centered")
@@ -31,7 +30,7 @@ if "system_prompt_messages" not in st.session_state:  # 프롬프트를 담은 �
     st.session_state.system_prompt_messages = Messages.from_prompt_file(chat_system_prompt_path)
 if "milvus" not in st.session_state:  # Milvus 클라이언트
     st.session_state.milvus = milvus_client
-if "client" not in st.session_state:  # OpenAI 클라이언트
+if "client" not in st.session_state:  # OpenAI 클라이언트 # 여기에서 굳이 필요 없는 듯
     load_dotenv()
     st.session_state.client = OpenAI()
 
@@ -69,20 +68,13 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
     write_messages(user_message)
     add_messages_to_session_state(user_message)
 
-    # reference 넣어주기
-    reference = """
-    ### question: 구매확정은 무엇인가요?
-    ### answer:
-구매자가 판매자에게 상품 주문 또는 서비스를 제공받은 후 해당 상품을 정상 수령하였거나 서비스에 대해 만족한 경우 "구매확정" 처리를 하게 됩니다.
-이처럼 구매확정 처리는 판매자에게 구매대금을 정산 해도 된다는 구매자의 의사표시이기 때문에 구매확정된 이후 판매자에게 정산이 진행됩니다. 
+    # TODO: 사용자 입력을 임베딩하여 가장 적절한 하나의 reference를 찾도록 수정
+    embedded_user_input = embed_question(user_input)
+    reference = search_from_faq(embedded_user_input)[0] # 추후에 get_reference 함수로 변경
 
-※ 참고. 구매자가 구매확정을 지연시킬 경우를 대비하여,  일정 기간이 지나면 자동으로 구매확정 처리됩니다. 
-
-자동 구매확정 도움말 바로 가기》"""
-
-    st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": reference})
+    st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": str(reference)})
     st.session_state.backend_messages += st.session_state.messages
-
+    print(st.session_state.backend_messages.to_dict())
     # 챗봇 대답
     with st.chat_message("assistant"):
         st.write_stream(get_response_stream(st.session_state.backend_messages))
