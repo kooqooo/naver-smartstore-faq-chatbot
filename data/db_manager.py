@@ -29,6 +29,20 @@ def filter_by_threshold(search_results: list[list[dict]], threshold: float = 0.4
             results.append(result)
     return results
 
+def search_from_faq(embedded_question: list[float], collection_name: str="faq", limit: int=10) -> list[dict]:
+    results = []
+    searched_results: list[list[dict]] = client.search(collection_name=collection_name, data=[embedded_question], output_fields=["question", "answer", "optional"], limit=limit)
+    searched_results = filter_by_threshold(searched_results, threshold=0.4)
+    for result in searched_results:
+        temp = dict()
+        entity = result["entity"]
+        # temp["id"] = result["id"]
+        temp["question"] = entity["question"]
+        temp["answer"] = entity["answer"]
+        temp["optional"] = entity["optional"]
+        results.append(temp)
+    return results
+
 if __name__ == "__main__":
     from openai import OpenAI
     openai = OpenAI()
