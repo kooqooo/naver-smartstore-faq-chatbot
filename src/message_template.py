@@ -113,24 +113,19 @@ if __name__ == "__main__":
         [("user", "add_messages 테스트"), ("assistant", "add_messages 테스트2")]
     )
     messages = messages.render_all({"topic": "cats"})
-    
-    another_messages = Messages(system_prompt="{system_prompt}")
-    another_messages.add_message("user", "내 이름은 {name}야.")
-    another_messages.add_message("assistant", "안녕하세요, {name}님.")
 
-    context = {"system_prompt": "시스템 프롬프트", "name": "구희찬"}
-    another_messages = another_messages.render_all(context)
+    test_message = Messages()
+    test_message = test_message.from_prompt_file("prompts/chat_system_prompt.txt")
+    test_message.add_message("user", "내 이름은 {name}이야.")
+    test_message.add_message("assistant", "안녕하세요, {name}님.")
+    test_message = test_message.render_all({"reference": "주어진 정보", "name": "구희찬"})
+    test_message = test_message.render_all({"reference": "주어진 정보2"}) # 당연하게도 한 번 렌더링되면 다시 렌더링 불가
 
-    
     def pretty_print(messages: List[dict[str, str]]):
         role_width = max(len(message["role"]) for message in messages) + 2
-        content_width = max(len(message["content"]) for message in messages) + 2
         for message in messages:
-            print(
-                message["role"].ljust(role_width)
-                + message["content"].ljust(content_width)
-            )
+            print(message["role"].ljust(role_width) + message["content"])
 
     pretty_print(messages.to_dict())
     print()
-    pretty_print(another_messages.to_dict())
+    pretty_print(test_message.to_dict())
