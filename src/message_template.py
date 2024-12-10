@@ -53,7 +53,7 @@ class Messages:
         if not path.exists():
             raise FileNotFoundError(f"{path}에 프롬프트가 존재하지 않습니다.")
         
-        prompt = path.read_text(encoding="utf-8").strip()
+        prompt = path.read_text(encoding="utf-8-sig").strip()
         return cls(system_prompt=prompt)
 
     def to_dict(self) -> List[dict[str, str]]:
