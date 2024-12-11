@@ -1,14 +1,17 @@
 import os
-
+from pathlib import Path
 import openai
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-CHAT_MODEL = os.getenv("CAHT_MODEL")
+CHAT_MODEL = os.getenv("CHAT_MODEL")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 client = openai.OpenAI()
 
+root_dir = Path(__file__).resolve().parent.parent
+prompts_dir = Path.joinpath(root_dir, "prompts")
+chat_system_prompt_path = Path.joinpath(prompts_dir, "chat_system_prompt.txt")
 
 if __name__ == "__main__":
 
