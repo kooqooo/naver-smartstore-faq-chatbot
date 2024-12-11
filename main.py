@@ -1,3 +1,4 @@
+import json
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -43,7 +44,7 @@ async def chat_endpoint(request: ChatRequest):
         for chunk in response:
             if chunk.choices[0].delta.content is not None:
                 content = chunk.choices[0].delta.content
-                yield f"data: {content}\n\n"
+                yield f"data: {json.dumps(content)}\n\n"
         
         yield "data: [DONE]\n\n"
 
