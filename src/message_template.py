@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
 
 
 @dataclass
@@ -10,7 +10,9 @@ class Message:
 
     def __post_init__(self) -> None:
         if self.role not in ["system", "user", "assistant"]:
-            raise ValueError("role은 'system', 'user','assistant' 중에 하나여야 합니다.")
+            raise ValueError(
+                "role은 'system', 'user','assistant' 중에 하나여야 합니다."
+            )
 
     def __repr__(self) -> str:
         return f"Message(role='{self.role}', content='{self.content}')"
@@ -46,13 +48,13 @@ class Messages:
             rendered_content = message.render(context)
             rendered_messages.add_message(message.role, rendered_content)
         return rendered_messages
-    
+
     @classmethod
     def from_prompt_file(cls, prompt_path: str) -> "Messages":
         path = Path(prompt_path)
         if not path.exists():
             raise FileNotFoundError(f"{path}에 프롬프트가 존재하지 않습니다.")
-        
+
         prompt = path.read_text(encoding="utf-8-sig").strip()
         return cls(system_prompt=prompt)
 
@@ -122,8 +124,12 @@ if __name__ == "__main__":
     test_message = test_message.from_prompt_file("prompts/chat_system_prompt.txt")
     test_message.add_message("user", "내 이름은 {name}이야.")
     test_message.add_message("assistant", "안녕하세요, {name}님.")
-    test_message = test_message.render_all({"reference": "주어진 정보", "name": "구희찬"})
-    test_message = test_message.render_all({"reference": "주어진 정보2"}) # 당연하게도 한 번 렌더링되면 다시 렌더링 불가
+    test_message = test_message.render_all(
+        {"reference": "주어진 정보", "name": "구희찬"}
+    )
+    test_message = test_message.render_all(
+        {"reference": "주어진 정보2"}
+    )  # 당연하게도 한 번 렌더링되면 다시 렌더링 불가
 
     def pretty_print(messages: List[dict[str, str]]):
         role_width = max(len(message["role"]) for message in messages) + 2

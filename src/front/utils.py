@@ -1,7 +1,7 @@
 import json
 
-import streamlit as st
 import requests
+import streamlit as st
 
 from src.message_template import Message, Messages
 
@@ -19,6 +19,7 @@ def write_messages(messages: Messages):
 def write_stream_message(message: Message):
     with st.chat_message("assistant"):
         st.write_stream(message.content)
+
 
 def add_messages_to_session_state(messages: Messages):
     st.session_state.messages += messages
@@ -79,7 +80,7 @@ def get_response_stream(messages: Messages):
                 content = json.loads(content)
                 full_response += content
                 yield content
-    
+
     response_message = Messages()
     response_message.add_message(role="assistant", content=full_response)
     add_messages_to_session_state(response_message)

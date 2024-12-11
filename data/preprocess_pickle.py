@@ -1,7 +1,7 @@
 import os
-import sys
 import pickle
 import re
+import sys
 
 from tqdm import tqdm
 
@@ -11,10 +11,11 @@ new_pickle_path = os.path.join(data, "data.pkl")
 embedded_pickle_path = os.path.join(data, "embedded_data.pkl")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
+project_root = os.path.abspath(os.path.join(current_dir, ".."))
 sys.path.append(project_root)
-from data.embeddings import embed_question
 from data.db_manager import create_vector_index
+from data.embeddings import embed_question
+
 
 def load_pickle(path: str = pickle_path) -> dict:
     with open(path, "rb") as f:
@@ -36,7 +37,7 @@ def process_postfix(text: str) -> dict:
     answer = ""
     index = text.index(postfix)
     answer = text[:index].strip()
-    
+
     try:
         optional_postfix_index = text.index(optional_postfix)
         optional = text[optional_postfix_index + len_optional_postfix :]
@@ -66,10 +67,11 @@ def preprocess() -> dict[str, dict[str, str | list[str]]]:
         key: str = replace_non_breaking_space(key)
         value: str = replace_non_breaking_space(value)
         res: dict = process_postfix(value)
-        preprocessed_data[key] = (res)
+        preprocessed_data[key] = res
 
     save_pickle(data=preprocessed_data, path=new_pickle_path)
     return preprocessed_data
+
 
 def embed_pickle():
     data = load_pickle(new_pickle_path)
@@ -78,15 +80,24 @@ def embed_pickle():
     for i, question in enumerate(tqdm(questions)):
         try:
             embedding = embed_question(question)
-            embedded_data.append({"id": i+1, "question": question, "answer": data[question]["answer"], "optional": data[question]["optional"], "vector": embedding})
+            embedded_data.append(
+                {
+                    "id": i + 1,
+                    "question": question,
+                    "answer": data[question]["answer"],
+                    "optional": data[question]["optional"],
+                    "vector": embedding,
+                }
+            )
         except ValueError:
             print(f"Failed to embed question: {question}")
             continue
     save_pickle(data=embedded_data, path=embedded_pickle_path)
     return embedded_data
 
+
 if __name__ == "__main__":
-    preprocess() # 전처리 후 data.pkl에 저장
+    preprocess()  # 전처리 후 data.pkl에 저장
     """
     저장되는 데이터 예시
     {
@@ -97,5 +108,5 @@ if __name__ == "__main__":
     # data = load_pickle(new_pickle_path)
     # print(data)
 
-    embedded_pickle = embed_pickle() # data.pkl의 질문을 임베딩하여 
-    create_vector_index(data=embedded_pickle) # milvus에 저장
+    embedded_pickle = embed_pickle()  # data.pkl의 질문을 임베딩하여
+    create_vector_index(data=embedded_pickle)  # milvus에 저장

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 import openai
 from dotenv import load_dotenv
 
@@ -17,7 +18,9 @@ if __name__ == "__main__":
 
     def get_response_stream(prompt):
         stream = client.chat.completions.create(
-            model=CHAT_MODEL, messages=[{"role": "user", "content": prompt}], stream=True
+            model=CHAT_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            stream=True,
         )
 
         for chunk in stream:

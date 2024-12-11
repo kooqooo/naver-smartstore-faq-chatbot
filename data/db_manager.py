@@ -8,13 +8,13 @@ dimension = 1536 if os.getenv("EMBEDDING_MODEL").endswith("small") else 3072
 db_path = os.path.join(os.path.dirname(__file__), "milvus.db")
 
 
-if os.name == 'nt':                     # Windows
-    client = pymilvus.MilvusClient()    # docker-compose가 실행중이어야 가능합니다.
+if os.name == "nt":  # Windows
+    client = pymilvus.MilvusClient()  # docker-compose가 실행중이어야 가능합니다.
 else:
     client = pymilvus.MilvusClient(db_path)
 
 
-def create_vector_index(collection_name: str="faq", data: list[dict]=None):
+def create_vector_index(collection_name: str = "faq", data: list[dict] = None):
     if data is None:
         raise ValueError("data must be provided")
     if client.has_collection(collection_name=collection_name):
@@ -23,6 +23,7 @@ def create_vector_index(collection_name: str="faq", data: list[dict]=None):
     client.create_collection(collection_name=collection_name, dimension=dimension)
     client.insert(collection_name=collection_name, data=data)
 
+
 def filter_by_threshold(search_results: list[list[dict]], threshold: float = 0.45):
     results = []
     for result in search_results[0]:
@@ -30,9 +31,17 @@ def filter_by_threshold(search_results: list[list[dict]], threshold: float = 0.4
             results.append(result)
     return results
 
-def search_from_faq(embedded_question: list[float], collection_name: str="faq", limit: int=10) -> list[dict]:
+
+def search_from_faq(
+    embedded_question: list[float], collection_name: str = "faq", limit: int = 10
+) -> list[dict]:
     results = []
-    searched_results: list[list[dict]] = client.search(collection_name=collection_name, data=[embedded_question], output_fields=["question", "answer", "optional"], limit=limit)
+    searched_results: list[list[dict]] = client.search(
+        collection_name=collection_name,
+        data=[embedded_question],
+        output_fields=["question", "answer", "optional"],
+        limit=limit,
+    )
     searched_results = filter_by_threshold(searched_results, threshold=0.4)
     for result in searched_results:
         temp = dict()
@@ -44,15 +53,26 @@ def search_from_faq(embedded_question: list[float], collection_name: str="faq", 
         results.append(temp)
     return results
 
+
 if __name__ == "__main__":
     from openai import OpenAI
+
     openai = OpenAI()
-    
+
     question = input("질문을 입력하세요: ")
-    embedded_question = openai.embeddings.create(input=question, model="text-embedding-3-small").data[0].embedding
+    embedded_question = (
+        openai.embeddings.create(input=question, model="text-embedding-3-small")
+        .data[0]
+        .embedding
+    )
 
     collection_name = "faq"
-    results: list[list[dict]] = client.search(collection_name=collection_name, data=[embedded_question], output_fields=["question", "answer", "optional"], limit=10)
+    results: list[list[dict]] = client.search(
+        collection_name=collection_name,
+        data=[embedded_question],
+        output_fields=["question", "answer", "optional"],
+        limit=10,
+    )
     results = filter_by_threshold(results, threshold=0.4)
 
     print(f"\n사용자 질문 : {question}\n\n")
@@ -62,4 +82,3 @@ if __name__ == "__main__":
         # print(f"답변 : {entity['answer']}")
         print(f"유사도 : {result['distance']}")
         print()
-    

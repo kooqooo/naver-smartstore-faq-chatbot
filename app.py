@@ -2,11 +2,13 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from src.front.utils import (delete_session_state,
-                            get_response_stream_from_openai,
-                            write_messages,
-                            add_messages_to_session_state,
-                            get_response_stream)
+from src.front.utils import (
+    add_messages_to_session_state,
+    delete_session_state,
+    get_response_stream,
+    get_response_stream_from_openai,
+    write_messages,
+)
 from src.message_template import Messages
 
 # 페이지 설정
@@ -26,7 +28,9 @@ if "backend_messages" not in st.session_state:  # 백엔드에 전달할 메시�
     st.session_state.backend_messages = Messages()
 if "system_prompt_messages" not in st.session_state:  # 프롬프트를 담은 메시지
     chat_system_prompt_path = "prompts/chat_system_prompt.txt"
-    st.session_state.system_prompt_messages = Messages.from_prompt_file(chat_system_prompt_path)
+    st.session_state.system_prompt_messages = Messages.from_prompt_file(
+        chat_system_prompt_path
+    )
 if "client" not in st.session_state:  # OpenAI 클라이언트 # 여기에서 굳이 필요 없는 듯
     load_dotenv()
     st.session_state.client = OpenAI()
@@ -61,7 +65,9 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
         delete_session_state()
         st.stop()
     user_message = Messages()
-    user_message.add_message(role="user", content=user_input) # 구매 확정에 대해서 알려주세요
+    user_message.add_message(
+        role="user", content=user_input
+    )  # 구매 확정에 대해서 알려주세요
     write_messages(user_message)
     add_messages_to_session_state(user_message)
 
