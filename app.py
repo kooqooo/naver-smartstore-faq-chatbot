@@ -70,7 +70,7 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
 
     # TODO: 사용자 입력을 임베딩하여 가장 적절한 하나의 reference를 찾도록 수정
     embedded_user_input = embed_question(user_input)
-    reference = search_from_faq(embedded_user_input)[:5] # 추후에 get_reference 함수로 변경
+    reference = search_from_faq(embedded_user_input, limit=5) # 추후에 get_reference 함수로 변경
 
     st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": str(reference)})
     st.session_state.backend_messages += st.session_state.messages
