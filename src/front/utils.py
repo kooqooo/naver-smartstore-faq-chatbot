@@ -60,7 +60,10 @@ def get_response_stream(messages: Messages):
 
 def get_response_stream_from_fastapi(messages: Messages):
     # TODO: url과 port 번호를 환경 변수로 관리
-    response = requests.post("http://localhost:8000/chat", json=messages.to_dict(), stream=True)
+    url = "http://localhost:8000/chat"
+    headers = {"Content-Type": "application/json"}
+    data = {"messages": messages.to_dict()}
+    response = requests.post(url=url, headers=headers, json=data, stream=True)
     response.raise_for_status()
 
     full_response = ""
