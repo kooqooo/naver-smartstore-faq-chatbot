@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-CHAT_MODEL = os.getenv("CAHT_MODEL")
+CHAT_MODEL = os.getenv("CHAT_MODEL")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 client = openai.OpenAI()
 
