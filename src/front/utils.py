@@ -1,3 +1,5 @@
+import json
+
 import streamlit as st
 import requests
 
@@ -27,7 +29,7 @@ def delete_session_state():
         del st.session_state[key]
 
 
-def get_response_stream(messages: Messages):
+def get_response_stream_from_openai(messages: Messages):
     """
     OpenAI API의 스트리밍 응답을 직접 제너레이터로 변환
     """
@@ -58,7 +60,7 @@ def get_response_stream(messages: Messages):
         st.error(f"오류가 발생했습니다: {str(e)}")
 
 
-def get_response_stream_from_fastapi(messages: Messages):
+def get_response_stream(messages: Messages):
     # TODO: url과 port 번호를 환경 변수로 관리
     url = "http://localhost:8000/chat"
     headers = {"Content-Type": "application/json"}
@@ -74,6 +76,7 @@ def get_response_stream_from_fastapi(messages: Messages):
                 content = line[6:]  # "data: " prefix 제거
                 if content == "[DONE]":
                     break
+                content = json.loads(content)
                 full_response += content
                 yield content
     
