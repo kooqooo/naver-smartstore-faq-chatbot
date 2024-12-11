@@ -3,6 +3,9 @@
 # Docker
 volumes/
 
+# 임시 파일
+test.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
