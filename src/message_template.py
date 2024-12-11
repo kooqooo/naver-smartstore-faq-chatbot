@@ -66,13 +66,17 @@ class Messages:
         return [f"{message.role}: {message.content}" for message in self.messages]
 
     def __add__(self, other) -> "Messages":
-        if isinstance(other, Messages):
-            self.messages.extend(other.messages)
-        elif isinstance(other, Message):
-            self.messages.append(other)
-        else:
-            raise TypeError(f"'{type(self)}' + '{type(other)}'")
-        return self
+        result = Messages()
+        result.messages = self.messages.copy()
+
+        try:
+            if isinstance(other, Messages):
+                result.messages.extend(other.messages)
+            elif isinstance(other, Message):
+                result.messages.append(other)
+        except Exception as e:
+            raise e
+        return result
 
     def __repr__(self) -> str:
         return f"MessageList(messages={self.messages})"
