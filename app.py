@@ -5,7 +5,8 @@ from openai import OpenAI
 from src.front.utils import (delete_session_state,
                             get_response_stream,
                             write_messages,
-                            add_messages_to_session_state,)
+                            add_messages_to_session_state,
+                            get_response_stream_from_fastapi)
 from src.message_template import Messages
 from data.db_manager import search_from_faq, client as milvus_client
 from data.embeddings import embed_question
@@ -13,7 +14,7 @@ from data.embeddings import embed_question
 # 페이지 설정
 st.set_page_config(page_title="스마트스토어 FAQ 챗봇", layout="centered")
 st.markdown(
-    "<h2 style='text-align: center;'>💬 네이버 스마트스토어 FAQ기반 질의응답</h1>",
+    "<h2 style='text-align: center;'>💬 네이버 스마트스토어 FAQ기반 질의응답</h2>",
     unsafe_allow_html=True,
 )
 
@@ -68,15 +69,18 @@ if user_input := st.chat_input("텍스트를 입력하세요."):
     write_messages(user_message)
     add_messages_to_session_state(user_message)
 
-    # TODO: 사용자 입력을 임베딩하여 가장 적절한 하나의 reference를 찾도록 수정
-    embedded_user_input = embed_question(user_input)
-    reference = search_from_faq(embedded_user_input, limit=5) # 추후에 get_reference 함수로 변경
+    # # TODO: 사용자 입력을 임베딩하여 가장 적절한 하나의 reference를 찾도록 수정
+    # embedded_user_input = embed_question(user_input)
+    # reference = search_from_faq(embedded_user_input, limit=5) # 추후에 get_reference 함수로 변경
 
-    st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": str(reference)})
-    st.session_state.backend_messages += st.session_state.messages
-    from pprint import pprint
-    pprint(st.session_state.backend_messages.to_dict())
+    # st.session_state.backend_messages = st.session_state.system_prompt_messages.render_all({"reference": str(reference)})
+    # st.session_state.backend_messages += st.session_state.messages
+    # from pprint import pprint
+    # pprint(st.session_state.backend_messages.to_dict())
+    # # 챗봇 대답
+    # with st.chat_message("assistant"):
+        # st.write_stream(get_response_stream(st.session_state.backend_messages))
+
     # 챗봇 대답
     with st.chat_message("assistant"):
-        st.write_stream(get_response_stream(st.session_state.backend_messages))
-
+        st.write_stream(get_response_stream_from_fastapi(st.session_state.messages))
