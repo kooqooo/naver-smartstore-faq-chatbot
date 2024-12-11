@@ -1,4 +1,4 @@
-# Windows에서는 milvus-lite를 설지할 수 없으므로, docker-compose로 standalone을 사용합니다.
+# Windows에서는 milvus-lite를 설치할 수 없으므로, docker-compose로 standalone을 사용합니다.
 
 version: '3.5'
 
