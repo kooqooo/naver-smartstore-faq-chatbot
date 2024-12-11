@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 
 from src.message_template import Message, Messages
 
@@ -55,3 +56,24 @@ def get_response_stream(messages: Messages):
 
     except Exception as e:
         st.error(f"오류가 발생했습니다: {str(e)}")
+
+
+def get_response_stream_from_fastapi(messages: Messages):
+    # TODO: url과 port 번호를 환경 변수로 관리
+    response = requests.post("http://localhost:8000/chat", json=messages.to_dict(), stream=True)
+    response.raise_for_status()
+
+    full_response = ""
+    for line in response.iter_lines():
+        if line:
+            line = line.decode("utf-8")
+            if line.startswith("data: "):
+                content = line[6:]  # "data: " prefix 제거
+                if content == "[DONE]":
+                    break
+                full_response += content
+                yield content
+    
+    response_message = Messages()
+    response_message.add_message(role="assistant", content=full_response)
+    add_messages_to_session_state(response_message)
